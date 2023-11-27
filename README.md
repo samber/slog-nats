@@ -49,7 +49,7 @@ go get github.com/samber/slog-nats
 
 **Compatibility**: go >= 1.21
 
-No breaking changes will be made to exported APIs before v3.0.0.
+No breaking changes will be made to exported APIs before v1.0.0.
 
 ## 💡 Usage
 
