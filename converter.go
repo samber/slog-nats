@@ -47,7 +47,7 @@ func DefaultConverter(addSource bool, replaceAttr func(groups []string, a slog.A
 		}
 	}
 
-	if v, ok := extra["request"]; ok {
+	if v, ok := extra[RequestKey]; ok {
 		if req, ok := v.(*http.Request); ok {
 			payload[RequestKey] = slogcommon.FormatRequest(req, RequestIgnoreHeaders)
 			delete(extra, RequestKey)
