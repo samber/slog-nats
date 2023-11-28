@@ -61,37 +61,44 @@ ifeq ($(OS),Windows)
 	NATS_CLI_BIN_NAME=nats.exe
 endif
 
+# only unix. use goreman for windows later.
+OVEERMIND_BIN_NAME=overmind
+
 NATS_SERVER_BIN_VERSION=v2.10.5
 NATS_CLI_BIN_VERSION=v0.1.1
 NATS_SURVEYOR_BIN_VERSION=v0.5.2
 nats-dep:
-	go install -ldflags="-X main.version=$(NATS_SERVER_BIN_VERSION)" github.com/nats-io/nats-server/v2@$(NATS_SERVER_BIN_VERSION)
-	go install -ldflags="-X main.version=$(NATS_CLI_BIN_VERSION)" github.com/nats-io/natscli/nats@$(NATS_CLI_BIN_VERSION)
-	go install -ldflags="-X main.version=$(NATS_SURVEYOR_BIN_VERSION)" github.com/nats-io/nats-surveyor@$(NATS_SURVEYOR_BIN_VERSION)
+	$(GO_BIN) install -ldflags="-X main.version=$(NATS_SERVER_BIN_VERSION)" github.com/nats-io/nats-server/v2@$(NATS_SERVER_BIN_VERSION)
+	${GO_BIN} install -ldflags="-X main.version=$(NATS_CLI_BIN_VERSION)" github.com/nats-io/natscli/nats@$(NATS_CLI_BIN_VERSION)
+	${GO_BIN} install -ldflags="-X main.version=$(NATS_SURVEYOR_BIN_VERSION)" github.com/nats-io/nats-surveyor@$(NATS_SURVEYOR_BIN_VERSION)
 
+	# servcie runner
+	$(GO_BIN) install github.com/DarthSim/overmind/v2@latest
+	brew install tmux
 
 NATS_MAIN_CONFIG_FILE=nats-main.conf
-NATS_MAIN_URL="nats://0.0.0.0:4222"
 NATS_MAIN_PORT=4222
+NATS_MAIN_URL="nats://0.0.0.0:$(NATS_MAIN_PORT)"
 
 NATS_LEAF_CONFIG_FILE=nats-leaf.conf
-NATS_LEAF_URL="nats://0.0.0.0:4223"
 NATS_LEAF_PORT=4223
+NATS_LEAF_URL="nats://0.0.0.0:$(NATS_LEAF_PORT)"
+
 
 nats-print:
-	nats context ls
+	$(NATS_CLI_BIN_NAME) context ls
 
 nats-init:
 	@echo ""
 	@echo "Configuring NATS context ..."
 
-	nats context save main --server "$(NATS_MAIN_URL)" 
-	nats context save leaf --server "$(NATS_LEAF_URL)" 
+	$(NATS_CLI_BIN_NAME) context save main --server "$(NATS_MAIN_URL)" 
+	$(NATS_CLI_BIN_NAME) context save leaf --server "$(NATS_LEAF_URL)" 
 
 	@echo ""
 	@echo "Creating nats main conf ..."
 	rm -f $(NATS_MAIN_CONFIG_FILE)
-	@echo "# nats main onf" >> $(NATS_MAIN_CONFIG_FILE)
+	@echo "# nats main conf" >> $(NATS_MAIN_CONFIG_FILE)
 	@echo "" >> $(NATS_MAIN_CONFIG_FILE)
 	@echo "port $(NATS_MAIN_PORT)" >> $(NATS_MAIN_CONFIG_FILE)
 	@echo "leafnodes: { port: $(NATS_LEAF_PORT) }" >> $(NATS_MAIN_CONFIG_FILE)
@@ -104,9 +111,22 @@ nats-init:
 	@echo "leafnodes: { remotes: [ {url: "nats-leaf://0.0.0.0:7422"} ] }" >> $(NATS_LEAF_CONFIG_FILE)
 	@echo ""
 
+	$(MAKE) nats-print
 
 nats-start:
-	$(NATS_SERVER_BIN_NAME) -c $(NATS_MAIN_CONFIG_FILE) 2> /dev/null & MAIN_PID=$(!)
+	# See Prof file for what it kicks off.
+	overmind start
+
+nats-test-00:
+	# own terminal. add to overmind later..
+	# nats main calls
 	sleep 1
-	$(NATS_SERVER_BIN_NAME) -c $(NATS_LEAF_CONFIG_FILE) 2> /dev/null & LEAF_PID=$(!)
+	$(NATS_CLI_BIN_NAME) --context main reply 'greet' 'hello from main' 
+	
+nats-test-01:
+	# own terminal. add to overmind later..
+	# nats leaf calls
+	$(NATS_CLI_BIN_NAME) --context leaf request 'greet' ''
 	sleep 1
+	#$(NATS_CLI_BIN_NAME) --context leaf reply 'greet' 'hello from leaf'
+
