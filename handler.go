@@ -38,6 +38,10 @@ func (o Option) NewNATSHandler() slog.Handler {
 		panic("missing NATS subject")
 	}
 
+	if o.Converter == nil {
+		o.Converter = DefaultConverter
+	}
+
 	return &NATSHandler{
 		option: o,
 		attrs:  []slog.Attr{},
@@ -58,12 +62,7 @@ func (h *NATSHandler) Enabled(_ context.Context, level slog.Level) bool {
 }
 
 func (h *NATSHandler) Handle(ctx context.Context, record slog.Record) error {
-	converter := DefaultConverter
-	if h.option.Converter != nil {
-		converter = h.option.Converter
-	}
-
-	payload := converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
+	payload := h.option.Converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
 
 	return h.option.EncodedConnection.Publish(
 		h.option.Subject,
