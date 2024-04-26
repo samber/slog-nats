@@ -19,6 +19,8 @@ type Option struct {
 
 	// optional: customize NATS event builder
 	Converter Converter
+	// optional: fetch attributes from context
+	AttrFromContext []func(ctx context.Context) []slog.Attr
 
 	// optional: see slog.HandlerOptions
 	AddSource   bool
@@ -42,6 +44,10 @@ func (o Option) NewNATSHandler() slog.Handler {
 		o.Converter = DefaultConverter
 	}
 
+	if o.AttrFromContext == nil {
+		o.AttrFromContext = []func(ctx context.Context) []slog.Attr{}
+	}
+
 	return &NATSHandler{
 		option: o,
 		attrs:  []slog.Attr{},
@@ -62,7 +68,8 @@ func (h *NATSHandler) Enabled(_ context.Context, level slog.Level) bool {
 }
 
 func (h *NATSHandler) Handle(ctx context.Context, record slog.Record) error {
-	payload := h.option.Converter(h.option.AddSource, h.option.ReplaceAttr, h.attrs, h.groups, &record)
+	fromContext := slogcommon.ContextExtractor(ctx, h.option.AttrFromContext)
+	payload := h.option.Converter(h.option.AddSource, h.option.ReplaceAttr, append(h.attrs, fromContext...), h.groups, &record)
 
 	return h.option.EncodedConnection.Publish(
 		h.option.Subject,
