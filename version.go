@@ -1,4 +1,4 @@
 package slognats
 
 const name = "samber/slog-nats"
-const version = "VERSION" // replaced by .github/workflows/release.yml
+const version = "v0.4.0" // replaced by .github/workflows/release.yml
