@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/nats-io/nats.go v1.31.0
 	github.com/samber/slog-common v0.17.1
-	go.uber.org/goleak v1.2.1
+	go.uber.org/goleak v1.3.0
 )
 
 require (
