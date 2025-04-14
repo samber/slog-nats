@@ -1,15 +1,16 @@
 module github.com/samber/slog-nats
 
 go 1.21
+toolchain go1.24.1
 
 require (
-	github.com/nats-io/nats.go v1.38.0
+	github.com/nats-io/nats.go v1.41.1
 	github.com/samber/slog-common v0.18.1
 	go.uber.org/goleak v1.3.0
 )
 
 require (
-	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/nats-io/nkeys v0.4.9 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/samber/lo v1.47.0 // indirect
