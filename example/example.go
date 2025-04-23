@@ -28,8 +28,10 @@ func main() {
 		panic(err)
 	}
 
-	defer nc.Flush()
-	defer nc.Close()
+	defer func() {
+		nc.Flush()
+		nc.Close()
+	}()
 
 	logger := slog.New(slognats.Option{Level: slog.LevelDebug, EncodedConnection: ec, Subject: "test"}.NewNATSHandler())
 	logger = logger.With("release", "v1.0.0")
