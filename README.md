@@ -1,4 +1,3 @@
-
 # slog: NATS handler
 
 [![tag](https://img.shields.io/github/tag/samber/slog-nats.svg)](https://github.com/samber/slog-nats/releases)
@@ -92,8 +91,8 @@ type Option struct {
 	Level     slog.Leveler
 
 	// NATS client
-	EncodedConnection *nats.EncodedConn
-	Subject           string
+	Connection *nats.Conn
+	Subject    string
 
 	// optional: customize NATS event builder
 	Converter Converter
@@ -125,7 +124,7 @@ The following attributes are interpreted by `slognats.DefaultConverter`:
 | "user"           | group (see below) |                 |
 | "error"          | any               | `error`         |
 | "request"        | any               | `*http.Request` |
-| other attributes | *                 |                 |
+| other attributes | \*                |                 |
 
 Other attributes will be injected in `extra` field.
 
@@ -166,15 +165,10 @@ func main() {
 		panic(err)
 	}
 
-	ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
-	if err != nil {
-		panic(err)
-	}
-
 	defer nc.Flush()
 	defer nc.Close()
 
-	logger := slog.New(slognats.Option{Level: slog.LevelDebug, EncodedConnection: ec, Subject: "test"}.NewNATSHandler())
+	logger := slog.New(slognats.Option{Level: slog.LevelDebug, Connection: nc, Subject: "test"}.NewNATSHandler())
 	logger = logger.With("release", "v1.0.0")
 
 	logger.
@@ -193,23 +187,23 @@ NATS message:
 
 ```json
 {
-  	"level": "ERROR",
-	"logger.name": "samber/slog-nats",
-	"logger.version": "1.0.0",
-	"message": "a message",
-	"timestamp": "2023-04-30T01:33:21.676768Z",
-	"error": {
-		"error": "an error",
-		"kind": "*errors.errorString",
-		"stack": null
-	},
-	"extra": {
-		"release": "v1.0.0"
-	},
-	"user": {
-		"created_at": "2023-04-30T01:33:21.676704Z",
-		"id": "user-123"
-	}
+  "level": "ERROR",
+  "logger.name": "samber/slog-nats",
+  "logger.version": "1.0.0",
+  "message": "a message",
+  "timestamp": "2023-04-30T01:33:21.676768Z",
+  "error": {
+    "error": "an error",
+    "kind": "*errors.errorString",
+    "stack": null
+  },
+  "extra": {
+    "release": "v1.0.0"
+  },
+  "user": {
+    "created_at": "2023-04-30T01:33:21.676704Z",
+    "id": "user-123"
+  }
 }
 ```
 

@@ -23,17 +23,12 @@ func main() {
 		panic(err)
 	}
 
-	ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
-	if err != nil {
-		panic(err)
-	}
-
 	defer func() {
 		nc.Flush()
 		nc.Close()
 	}()
 
-	logger := slog.New(slognats.Option{Level: slog.LevelDebug, EncodedConnection: ec, Subject: "test"}.NewNATSHandler())
+	logger := slog.New(slognats.Option{Level: slog.LevelDebug, Connection: nc, Subject: "test"}.NewNATSHandler())
 	logger = logger.With("release", "v1.0.0")
 
 	logger.
