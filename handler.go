@@ -2,7 +2,7 @@ package slognats
 
 import (
 	"context"
-
+	"encoding/json"
 	"log/slog"
 
 	"github.com/nats-io/nats.go"
@@ -14,8 +14,11 @@ type Option struct {
 	Level slog.Leveler
 
 	// NATS client
-	EncodedConnection *nats.EncodedConn
-	Subject           string
+	Connection *nats.Conn
+	Subject    string
+
+	// Deprecated: Use Connection instead. Encoded connections are no longer supported by nats.go.
+	EncodedConnection *nats.EncodedConn //nolint:staticcheck
 
 	// optional: customize NATS event builder
 	Converter Converter
@@ -32,7 +35,7 @@ func (o Option) NewNATSHandler() slog.Handler {
 		o.Level = slog.LevelDebug
 	}
 
-	if o.EncodedConnection == nil {
+	if o.Connection == nil && o.EncodedConnection == nil {
 		panic("missing NATS connection")
 	}
 
@@ -71,6 +74,15 @@ func (h *NATSHandler) Handle(ctx context.Context, record slog.Record) error {
 	fromContext := slogcommon.ContextExtractor(ctx, h.option.AttrFromContext)
 	payload := h.option.Converter(h.option.AddSource, h.option.ReplaceAttr, append(h.attrs, fromContext...), h.groups, &record)
 
+	if h.option.Connection != nil {
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+		return h.option.Connection.Publish(h.option.Subject, data)
+	}
+
+	//nolint:staticcheck // kept for backward compatibility
 	return h.option.EncodedConnection.Publish(
 		h.option.Subject,
 		payload,
