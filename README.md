@@ -98,11 +98,14 @@ GoDoc: [https://pkg.go.dev/github.com/samber/slog-nats](https://pkg.go.dev/githu
 ```go
 type Option struct {
 	// log level (default: debug)
-	Level     slog.Leveler
+	Level slog.Leveler
 
 	// NATS client
+	Connection *nats.Conn
+	Subject    string
+
+	// Deprecated: Use Connection instead. Encoded connections are no longer supported by nats.go.
 	EncodedConnection *nats.EncodedConn
-	Subject           string
 
 	// optional: customize NATS event builder
 	Converter Converter
@@ -175,15 +178,9 @@ func main() {
 		panic(err)
 	}
 
-	ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
-	if err != nil {
-		panic(err)
-	}
-
-	defer nc.Flush()
 	defer nc.Close()
 
-	logger := slog.New(slognats.Option{Level: slog.LevelDebug, EncodedConnection: ec, Subject: "test"}.NewNATSHandler())
+	logger := slog.New(slognats.Option{Level: slog.LevelDebug, Connection: nc, Subject: "test"}.NewNATSHandler())
 	logger = logger.With("release", "v1.0.0")
 
 	logger.
